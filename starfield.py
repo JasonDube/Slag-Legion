@@ -58,27 +58,41 @@ class Star:
 class Planet:
     """Represents a planet in space"""
     
-    def __init__(self, x: float, y: float, name: str, radius: float = 15.0, color: Tuple[int, int, int] = (0, 100, 255)):
-        self.x = x
-        self.y = y
+    def __init__(self, world_x: float, world_y: float, name: str, radius: float = 15.0, color: Tuple[int, int, int] = (0, 100, 255)):
+        self.world_x = world_x  # Position in world space
+        self.world_y = world_y
+        self.screen_x = 0.0  # Calculated screen position
+        self.screen_y = 0.0
         self.name = name
         self.radius = radius
         self.color = color
         self.selected = False
         self.targeted = False
     
+    def update_screen_position(self, player_world_x: float, player_world_y: float):
+        """Calculate screen position from world position relative to player"""
+        # Screen center represents player's world position
+        self.screen_x = (self.world_x - player_world_x) + constants.SCREEN_WIDTH / 2
+        self.screen_y = (self.world_y - player_world_y) + constants.SCREEN_HEIGHT / 2
+    
+    def get_sector(self) -> Tuple[int, int]:
+        """Get the sector this planet is in"""
+        sector_x = int(self.world_x // constants.SECTOR_WIDTH) % constants.SECTORS_X
+        sector_y = int(self.world_y // constants.SECTOR_HEIGHT) % constants.SECTORS_Y
+        return (sector_x, sector_y)
+    
     def is_clicked(self, mouse_pos: Tuple[int, int]) -> bool:
-        """Check if the planet was clicked"""
-        dx = mouse_pos[0] - self.x
-        dy = mouse_pos[1] - self.y
+        """Check if the planet was clicked (uses screen position)"""
+        dx = mouse_pos[0] - self.screen_x
+        dy = mouse_pos[1] - self.screen_y
         distance = math.sqrt(dx * dx + dy * dy)
         return distance <= self.radius
     
     def rotate(self, angle_radians: float, center_x: float, center_y: float):
-        """Rotate the planet around a center point by the given angle in radians"""
-        # Translate to origin
-        dx = self.x - center_x
-        dy = self.y - center_y
+        """Rotate the planet around a center point by the given angle in radians (in world space)"""
+        # Translate to origin (in world space)
+        dx = self.world_x - center_x
+        dy = self.world_y - center_y
         
         # Rotate
         cos_a = math.cos(angle_radians)
@@ -87,17 +101,17 @@ class Planet:
         new_y = dx * sin_a + dy * cos_a
         
         # Translate back
-        self.x = new_x + center_x
-        self.y = new_y + center_y
+        self.world_x = new_x + center_x
+        self.world_y = new_y + center_y
     
     def draw(self, screen: pygame.Surface):
-        """Draw the planet with optional yellow outline if selected"""
-        pygame.draw.circle(screen, self.color, (int(self.x), int(self.y)), int(self.radius))
+        """Draw the planet with optional yellow outline if selected (uses screen position)"""
+        pygame.draw.circle(screen, self.color, (int(self.screen_x), int(self.screen_y)), int(self.radius))
         
         # Draw yellow outline if selected
         if self.selected:
             yellow = (255, 255, 0)
-            pygame.draw.circle(screen, yellow, (int(self.x), int(self.y)), int(self.radius) + 3, 2)
+            pygame.draw.circle(screen, yellow, (int(self.screen_x), int(self.screen_y)), int(self.radius) + 3, 2)
 
 
 class Starfield:
@@ -114,16 +128,27 @@ class Starfield:
         self.center_x = constants.SCREEN_WIDTH / 2  # Rotation center
         self.center_y = constants.SCREEN_HEIGHT / 2  # Rotation center
         self._generate_stars(num_stars)
-        # Create planets at random positions
+        # Create planets in starting sector (250, 250) for testing
         self.planets: List[Planet] = []
-        # Blue planet
-        blue_x = random.uniform(100, constants.SCREEN_WIDTH - 100)
-        blue_y = random.uniform(100, constants.SCREEN_HEIGHT - 100)
-        self.planets.append(Planet(blue_x, blue_y, "blue planet", 15.0, (0, 100, 255)))
-        # Red planet
-        red_x = random.uniform(100, constants.SCREEN_WIDTH - 100)
-        red_y = random.uniform(100, constants.SCREEN_HEIGHT - 100)
-        self.planets.append(Planet(red_x, red_y, "red planet", 15.0, (255, 50, 50)))
+        # Player starts at (WORLD_WIDTH // 2, WORLD_HEIGHT // 2) = (325000, 175000)
+        # This is the left edge of sector (250, 250), which appears at screen center
+        player_start_x = constants.WORLD_WIDTH // 2
+        player_start_y = constants.WORLD_HEIGHT // 2
+        
+        # Blue planet - place offset from player start position (so it's visible on screen)
+        # Offset by screen-relative amounts so they appear on screen
+        blue_world_x = player_start_x + random.uniform(-400, 400)
+        blue_world_y = player_start_y + random.uniform(-250, 250)
+        blue_planet = Planet(blue_world_x, blue_world_y, "blue planet", 15.0, (0, 100, 255))
+        self.planets.append(blue_planet)
+        print(f"Created blue planet at world: ({blue_world_x:.1f}, {blue_world_y:.1f})")
+        
+        # Red planet - place offset from player start position
+        red_world_x = player_start_x + random.uniform(-400, 400)
+        red_world_y = player_start_y + random.uniform(-250, 250)
+        red_planet = Planet(red_world_x, red_world_y, "red planet", 15.0, (255, 50, 50))
+        self.planets.append(red_planet)
+        print(f"Created red planet at world: ({red_world_x:.1f}, {red_world_y:.1f})")
     
     def _generate_stars(self, num_stars: int):
         """Generate random stars across the screen"""
@@ -174,8 +199,14 @@ class Starfield:
         """
         self.rotation_velocity = direction * self.rotation_speed
     
-    def update(self, dt: float):
-        """Update all stars (movement, rotation, and blinking)"""
+    def update(self, dt: float, player_world_x: float, player_world_y: float):
+        """Update all stars (movement, rotation, and blinking) and planets
+        
+        Args:
+            dt: Delta time
+            player_world_x: Player's world X position
+            player_world_y: Player's world Y position
+        """
         # Calculate movement delta
         dx = self.velocity_x * dt
         dy = self.velocity_y * dt
@@ -198,12 +229,16 @@ class Starfield:
             if rotation_angle_rad != 0:
                 star.rotate(rotation_angle_rad, self.center_x, self.center_y)
         
-        # Update planets (moves and rotates same as stars)
+        # Update planets - they stay fixed in world space, only screen position changes
         for planet in self.planets:
-            planet.x += dx
-            planet.y += dy
+            # Planets do NOT move in world space - they stay in their sector
+            # Only apply rotation if rotating (around player's world position)
             if rotation_angle_rad != 0:
-                planet.rotate(rotation_angle_rad, self.center_x, self.center_y)
+                planet.rotate(rotation_angle_rad, player_world_x, player_world_y)
+            
+            # Update screen position based on player's world position
+            # This makes planets appear to move on screen like stars, but they stay in their sector
+            planet.update_screen_position(player_world_x, player_world_y)
         
         # Remove stars that went off screen and create new ones
         stars_to_remove = []
@@ -245,13 +280,15 @@ class Starfield:
                 self.stars.append(self._create_star_at_edge(edge))
     
     def check_planet_click(self, mouse_pos: Tuple[int, int], show_all: bool = False, 
-                          visible_polygon: List[Tuple[int, int]] = None) -> bool:
+                          visible_polygon: List[Tuple[int, int]] = None, 
+                          current_sector: Tuple[int, int] = None) -> bool:
         """Check if any planet was clicked and handle selection
         
         Args:
             mouse_pos: Mouse position (x, y)
             show_all: If True, planets are always visible. If False, check visible_polygon
             visible_polygon: Polygon coordinates defining visible area
+            current_sector: Current sector (x, y) - only show planets in this sector
             
         Returns:
             True if a planet was clicked, False otherwise
@@ -260,12 +297,22 @@ class Starfield:
         
         # Check all planets
         for planet in self.planets:
-            # Check if planet is visible
+            # Check if planet is in current sector (if not show_all)
+            if not show_all and current_sector:
+                planet_sector = planet.get_sector()
+                if planet_sector != current_sector:
+                    continue  # Skip planets not in current sector
+            
+            # Check if planet is visible on screen
             planet_visible = False
             if show_all:
                 planet_visible = True
             elif visible_polygon:
-                planet_visible = point_in_polygon((planet.x, planet.y), visible_polygon)
+                planet_visible = point_in_polygon((planet.screen_x, planet.screen_y), visible_polygon)
+            else:
+                # If no polygon but in sector, check if on screen
+                planet_visible = (-50 <= planet.screen_x <= constants.SCREEN_WIDTH + 50 and 
+                                 -50 <= planet.screen_y <= constants.SCREEN_HEIGHT + 50)
             
             if planet_visible and planet.is_clicked(mouse_pos):
                 # Deselect all other planets
@@ -311,13 +358,15 @@ class Starfield:
                 return planet.name
         return None
     
-    def draw(self, screen: pygame.Surface, show_all: bool = False, visible_polygon: List[Tuple[int, int]] = None):
-        """Draw stars and planet
+    def draw(self, screen: pygame.Surface, show_all: bool = False, visible_polygon: List[Tuple[int, int]] = None,
+             current_sector: Tuple[int, int] = None):
+        """Draw stars and planets
         
         Args:
             screen: Surface to draw on
             show_all: If True, draw all stars. If False, only draw stars in visible_polygon
             visible_polygon: Polygon coordinates defining visible area (screen coordinates)
+            current_sector: Current sector (x, y) - only draw planets in this sector
         """
         from utils import point_in_polygon
         
@@ -336,14 +385,25 @@ class Starfield:
                 size = 1 if star.brightness < 0.7 else 2
                 pygame.draw.circle(screen, color, (int(star.x), int(star.y)), size)
         
-        # Draw planets if visible
+        # Draw planets if visible and in current sector
         for planet in self.planets:
+            # Check if planet is in current sector (if not show_all)
+            if not show_all and current_sector:
+                planet_sector = planet.get_sector()
+                if planet_sector != current_sector:
+                    continue  # Skip planets not in current sector
+            
+            # Check if planet is visible on screen
             planet_visible = False
             if show_all:
                 planet_visible = True
             elif visible_polygon:
                 # Check if planet center is in visible polygon
-                planet_visible = point_in_polygon((planet.x, planet.y), visible_polygon)
+                planet_visible = point_in_polygon((planet.screen_x, planet.screen_y), visible_polygon)
+            else:
+                # If no polygon but in sector, check if on screen
+                planet_visible = (-50 <= planet.screen_x <= constants.SCREEN_WIDTH + 50 and 
+                                 -50 <= planet.screen_y <= constants.SCREEN_HEIGHT + 50)
             
             if planet_visible:
                 planet.draw(screen)

@@ -1,0 +1,9 @@
+{
+  "start_frame": 1,
+  "end_frame": null,
+  "fps": 6,
+  "loop": false,
+  "skip_first_frame": true,
+  "sticky_frame": 13,
+  "notes": "Shocked animation - skip first frame"
+}

@@ -1,0 +1,9 @@
+{
+  "start_frame": 1,
+  "end_frame": null,
+  "fps": 5,
+  "loop": false,
+  "skip_first_frame": true,
+  "sticky_frame": 7,
+  "notes": "Neutral idle animation - skip first frame"
+}

@@ -20,8 +20,7 @@ REGIONS = {
     'central_top_region': ((361, 0), (942, 76)),
     'central_middle_region': ((361, 77), (942, 622)),
     'central_bottom_region': ((361, 623), (942, 700)),
-    'right_top_region': ((943, 0), (1300, 76)),
-    'right_bottom_region': ((943, 77), (1300, 700))
+    'right_region': ((943, 0), (1300, 700))
 }
 
 # Room configuration
@@ -53,6 +52,15 @@ DEBUG_VIEWPORT = [
     (504, 344),
     (424, 369)
 ]
+
+# World space settings
+# Each sector is screen-sized (1300x700), with 500x500 sectors
+WORLD_WIDTH = SCREEN_WIDTH * 500  # 1300 * 500 = 650,000
+WORLD_HEIGHT = SCREEN_HEIGHT * 500  # 700 * 500 = 350,000
+SECTORS_X = 500
+SECTORS_Y = 500
+SECTOR_WIDTH = WORLD_WIDTH // SECTORS_X  # 1300 (screen width)
+SECTOR_HEIGHT = WORLD_HEIGHT // SECTORS_Y  # 700 (screen height)
 
 # Game settings
 FPS = 60

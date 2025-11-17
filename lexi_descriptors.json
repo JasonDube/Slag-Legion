@@ -1,0 +1,256 @@
+{
+  "llm_descriptors": [
+    "ambivalent",
+    "anxious",
+    "assistive",
+    "assured",
+    "careless",
+    "concerned",
+    "content",
+    "curious",
+    "detailed",
+    "enthusiastic",
+    "excited",
+    "friendly",
+    "grateful",
+    "helpful",
+    "hospitable",
+    "indignation",
+    "neutral",
+    "thoughtful",
+    "witty"
+  ],
+  "user_descriptors": [
+    "agreement",
+    "command",
+    "complaint",
+    "compliment",
+    "concern",
+    "curiosity",
+    "curious",
+    "flirtation",
+    "greeting",
+    "informative",
+    "instructive",
+    "jovial",
+    "obscene",
+    "observation",
+    "question",
+    "request",
+    "sarcasm",
+    "sarcastic",
+    "self-awareness",
+    "statement",
+    "story"
+  ],
+  "llm_counts": {
+    "friendly": 3,
+    "helpful": 6,
+    "witty": 1,
+    "thoughtful": 2,
+    "curious": 6,
+    "ambivalent": 1,
+    "grateful": 2,
+    "assured": 1,
+    "assistive": 1,
+    "neutral": 1,
+    "concerned": 2,
+    "enthusiastic": 1,
+    "excited": 1,
+    "careless": 1,
+    "content": 1,
+    "hospitable": 1,
+    "detailed": 1,
+    "indignation": 1,
+    "anxious": 1
+  },
+  "user_counts": {
+    "greeting": 5,
+    "flirtation": 1,
+    "sarcasm": 1,
+    "curiosity": 3,
+    "curious": 2,
+    "question": 2,
+    "compliment": 1,
+    "request": 4,
+    "agreement": 1,
+    "statement": 2,
+    "jovial": 1,
+    "informative": 1,
+    "story": 1,
+    "concern": 2,
+    "self-awareness": 1,
+    "complaint": 1,
+    "sarcastic": 1,
+    "instructive": 1,
+    "observation": 1,
+    "obscene": 1,
+    "command": 1
+  },
+  "llm_by_frequency": [
+    {
+      "descriptor": "helpful",
+      "count": 6
+    },
+    {
+      "descriptor": "curious",
+      "count": 6
+    },
+    {
+      "descriptor": "friendly",
+      "count": 3
+    },
+    {
+      "descriptor": "thoughtful",
+      "count": 2
+    },
+    {
+      "descriptor": "grateful",
+      "count": 2
+    },
+    {
+      "descriptor": "concerned",
+      "count": 2
+    },
+    {
+      "descriptor": "witty",
+      "count": 1
+    },
+    {
+      "descriptor": "ambivalent",
+      "count": 1
+    },
+    {
+      "descriptor": "assured",
+      "count": 1
+    },
+    {
+      "descriptor": "assistive",
+      "count": 1
+    },
+    {
+      "descriptor": "neutral",
+      "count": 1
+    },
+    {
+      "descriptor": "enthusiastic",
+      "count": 1
+    },
+    {
+      "descriptor": "excited",
+      "count": 1
+    },
+    {
+      "descriptor": "careless",
+      "count": 1
+    },
+    {
+      "descriptor": "content",
+      "count": 1
+    },
+    {
+      "descriptor": "hospitable",
+      "count": 1
+    },
+    {
+      "descriptor": "detailed",
+      "count": 1
+    },
+    {
+      "descriptor": "indignation",
+      "count": 1
+    },
+    {
+      "descriptor": "anxious",
+      "count": 1
+    }
+  ],
+  "user_by_frequency": [
+    {
+      "descriptor": "greeting",
+      "count": 5
+    },
+    {
+      "descriptor": "request",
+      "count": 4
+    },
+    {
+      "descriptor": "curiosity",
+      "count": 3
+    },
+    {
+      "descriptor": "curious",
+      "count": 2
+    },
+    {
+      "descriptor": "question",
+      "count": 2
+    },
+    {
+      "descriptor": "statement",
+      "count": 2
+    },
+    {
+      "descriptor": "concern",
+      "count": 2
+    },
+    {
+      "descriptor": "flirtation",
+      "count": 1
+    },
+    {
+      "descriptor": "sarcasm",
+      "count": 1
+    },
+    {
+      "descriptor": "compliment",
+      "count": 1
+    },
+    {
+      "descriptor": "agreement",
+      "count": 1
+    },
+    {
+      "descriptor": "jovial",
+      "count": 1
+    },
+    {
+      "descriptor": "informative",
+      "count": 1
+    },
+    {
+      "descriptor": "story",
+      "count": 1
+    },
+    {
+      "descriptor": "self-awareness",
+      "count": 1
+    },
+    {
+      "descriptor": "complaint",
+      "count": 1
+    },
+    {
+      "descriptor": "sarcastic",
+      "count": 1
+    },
+    {
+      "descriptor": "instructive",
+      "count": 1
+    },
+    {
+      "descriptor": "observation",
+      "count": 1
+    },
+    {
+      "descriptor": "obscene",
+      "count": 1
+    },
+    {
+      "descriptor": "command",
+      "count": 1
+    }
+  ],
+  "total_llm_uses": 34,
+  "total_user_uses": 34
+}

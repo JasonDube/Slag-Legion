@@ -1,0 +1,9 @@
+{
+  "start_frame": 1,
+  "end_frame": null,
+  "fps": 3,
+  "loop": false,
+  "skip_first_frame": true,
+  "sticky_frame": 5,
+  "notes": "Professional animation - skip first frame"
+}
