@@ -1,0 +1,244 @@
+{
+  "emotion_mappings": {
+    "ambivalent": {
+      "primary": "lexi_ambivalent",
+      "fallbacks": ["lexi_detached", "lexi_neutral"],
+      "locations": {
+        "right_panel": "lexi_ambivalent",
+        "control_room": null
+      }
+    },
+    "anxious": {
+      "primary": "lexi_detached",
+      "fallbacks": ["lexi_ambivalent", "lexi_neutral"],
+      "locations": {
+        "right_panel": "lexi_detached",
+        "control_room": null
+      }
+    },
+    "concerned": {
+      "primary": "lexi_detached",
+      "fallbacks": ["lexi_ambivalent", "lexi_neutral"],
+      "locations": {
+        "right_panel": "lexi_detached",
+        "control_room": null
+      }
+    },
+    "assistive": {
+      "primary": "lexi_helpful",
+      "fallbacks": ["lexi_friendly", "lexi_neutral"],
+      "locations": {
+        "right_panel": "lexi_helpful",
+        "control_room": null
+      }
+    },
+    "helpful": {
+      "primary": "lexi_helpful",
+      "fallbacks": ["lexi_friendly", "lexi_neutral"],
+      "locations": {
+        "right_panel": "lexi_helpful",
+        "control_room": null
+      }
+    },
+    "hospitable": {
+      "primary": "lexi_helpful",
+      "fallbacks": ["lexi_friendly", "lexi_neutral"],
+      "locations": {
+        "right_panel": "lexi_helpful",
+        "control_room": null
+      }
+    },
+    "assured": {
+      "primary": "lexi_neutral",
+      "fallbacks": ["lexi_professional"],
+      "locations": {
+        "right_panel": "lexi_neutral",
+        "control_room": null
+      }
+    },
+    "content": {
+      "primary": "lexi_neutral",
+      "fallbacks": ["lexi_professional"],
+      "locations": {
+        "right_panel": "lexi_neutral",
+        "control_room": null
+      }
+    },
+    "neutral": {
+      "primary": "lexi_neutral",
+      "fallbacks": ["lexi_professional"],
+      "locations": {
+        "right_panel": "lexi_neutral",
+        "control_room": null
+      }
+    },
+    "professional": {
+      "primary": "lexi_professional",
+      "fallbacks": ["lexi_neutral"],
+      "locations": {
+        "right_panel": "lexi_professional",
+        "control_room": null
+      }
+    },
+    "confident": {
+      "primary": "lexi_neutral",
+      "fallbacks": ["lexi_professional"],
+      "locations": {
+        "right_panel": "lexi_neutral",
+        "control_room": null
+      }
+    },
+    "careless": {
+      "primary": "lexi_friendly",
+      "fallbacks": ["lexi_sweet", "lexi_neutral"],
+      "locations": {
+        "right_panel": "lexi_friendly",
+        "control_room": null
+      }
+    },
+    "enthusiastic": {
+      "primary": "lexi_friendly",
+      "fallbacks": ["lexi_helpful", "lexi_neutral"],
+      "locations": {
+        "right_panel": "lexi_friendly",
+        "control_room": null
+      }
+    },
+    "curious": {
+      "primary": "lexi_thoughtful",
+      "fallbacks": ["lexi_helpful", "lexi_neutral"],
+      "locations": {
+        "right_panel": "lexi_thoughtful",
+        "control_room": null
+      }
+    },
+    "detailed": {
+      "primary": "lexi_thoughtful",
+      "fallbacks": ["lexi_professional", "lexi_neutral"],
+      "locations": {
+        "right_panel": "lexi_thoughtful",
+        "control_room": null
+      }
+    },
+    "thoughtful": {
+      "primary": "lexi_thoughtful",
+      "fallbacks": ["lexi_professional", "lexi_neutral"],
+      "locations": {
+        "right_panel": "lexi_thoughtful",
+        "control_room": null
+      }
+    },
+    "witty": {
+      "primary": "lexi_witty",
+      "fallbacks": ["lexi_sarcastic", "lexi_friendly"],
+      "locations": {
+        "right_panel": "lexi_witty",
+        "control_room": null
+      }
+    },
+    "excited": {
+      "primary": "lexi_friendly",
+      "fallbacks": ["lexi_helpful", "lexi_neutral"],
+      "locations": {
+        "right_panel": "lexi_friendly",
+        "control_room": null
+      }
+    },
+    "fascinated": {
+      "primary": "lexi_friendly",
+      "fallbacks": ["lexi_helpful", "lexi_neutral"],
+      "locations": {
+        "right_panel": "lexi_friendly",
+        "control_room": null
+      }
+    },
+    "grateful": {
+      "primary": "lexi_friendly",
+      "fallbacks": ["lexi_sweet", "lexi_neutral"],
+      "locations": {
+        "right_panel": "lexi_friendly",
+        "control_room": null
+      }
+    },
+    "friendly": {
+      "primary": "lexi_friendly",
+      "fallbacks": ["lexi_sweet", "lexi_neutral"],
+      "locations": {
+        "right_panel": "lexi_friendly",
+        "control_room": null
+      }
+    },
+    "happy": {
+      "primary": "lexi_friendly",
+      "fallbacks": ["lexi_sweet", "lexi_helpful"],
+      "locations": {
+        "right_panel": "lexi_friendly",
+        "control_room": null
+      }
+    },
+    "sweet": {
+      "primary": "lexi_sweet",
+      "fallbacks": ["lexi_friendly", "lexi_neutral"],
+      "locations": {
+        "right_panel": "lexi_sweet",
+        "control_room": null
+      }
+    },
+    "sarcastic": {
+      "primary": "lexi_sarcastic",
+      "fallbacks": ["lexi_witty", "lexi_neutral"],
+      "locations": {
+        "right_panel": "lexi_sarcastic",
+        "control_room": null
+      }
+    },
+    "shocked": {
+      "primary": "lexi_shocked",
+      "fallbacks": ["lexi_neutral"],
+      "locations": {
+        "right_panel": "lexi_shocked",
+        "control_room": null
+      }
+    },
+    "diplomatic": {
+      "primary": "lexi_diplomatic",
+      "fallbacks": ["lexi_professional", "lexi_neutral"],
+      "locations": {
+        "right_panel": "lexi_diplomatic",
+        "control_room": null
+      }
+    },
+    "flirtatious": {
+      "primary": "lexi_flirtatious",
+      "fallbacks": ["lexi_friendly", "lexi_neutral"],
+      "locations": {
+        "right_panel": "lexi_flirtatious",
+        "control_room": null
+      }
+    },
+    "detached": {
+      "primary": "lexi_detached",
+      "fallbacks": ["lexi_ambivalent", "lexi_neutral"],
+      "locations": {
+        "right_panel": "lexi_detached",
+        "control_room": null
+      }
+    },
+    "indignation": {
+      "primary": "lexi_neutral",
+      "fallbacks": ["lexi_professional"],
+      "locations": {
+        "right_panel": "lexi_neutral",
+        "control_room": null
+      }
+    }
+  },
+  "pose_overrides": {
+    "sit": {
+      "control_room": "lexi_sit_static"
+    },
+    "stand": {
+      "control_room": "lexi_control_room_standing"
+    }
+  }
+}

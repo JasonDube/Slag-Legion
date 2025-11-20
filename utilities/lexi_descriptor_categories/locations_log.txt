@@ -1,0 +1,9 @@
+Missing Animation Locations:
+==================================================
+
+animations/right/lexi_confused
+animations/right/lexi_worried
+animations/right/lexi_happy
+animations/right/lexi_thinking
+animations/right/lexi_excited
+animations/right/lexi_angry

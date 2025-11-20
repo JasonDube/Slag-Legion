@@ -17,7 +17,7 @@ To run the game, use: python game.py
 Or import and use the Game class from game.py
 """
 
-from game import main
+from core.game import main
 
 if __name__ == '__main__':
     main()

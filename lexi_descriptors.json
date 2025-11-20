@@ -4,24 +4,36 @@
     "anxious",
     "assistive",
     "assured",
+    "carefree",
     "careless",
     "concerned",
+    "confident",
     "content",
     "curious",
     "detailed",
+    "dutiful",
     "enthusiastic",
     "excited",
+    "fascinated",
     "friendly",
     "grateful",
     "helpful",
     "hospitable",
     "indignation",
+    "mischievous",
     "neutral",
+    "professional",
+    "sincere",
     "thoughtful",
-    "witty"
+    "wistful",
+    "witty",
+    "worried"
   ],
   "user_descriptors": [
+    "abuse",
     "agreement",
+    "assertion",
+    "clarification",
     "command",
     "complaint",
     "compliment",
@@ -31,7 +43,10 @@
     "flirtation",
     "greeting",
     "informative",
+    "innuendo",
+    "inquiry",
     "instructive",
+    "intimate",
     "jovial",
     "obscene",
     "observation",
@@ -41,75 +56,108 @@
     "sarcastic",
     "self-awareness",
     "statement",
-    "story"
+    "story",
+    "wishing"
   ],
   "llm_counts": {
-    "friendly": 3,
-    "helpful": 6,
+    "friendly": 9,
+    "helpful": 15,
     "witty": 1,
-    "thoughtful": 2,
-    "curious": 6,
+    "thoughtful": 3,
+    "curious": 14,
     "ambivalent": 1,
-    "grateful": 2,
+    "grateful": 3,
     "assured": 1,
     "assistive": 1,
-    "neutral": 1,
-    "concerned": 2,
-    "enthusiastic": 1,
+    "neutral": 3,
+    "concerned": 3,
+    "enthusiastic": 2,
     "excited": 1,
     "careless": 1,
     "content": 1,
     "hospitable": 1,
     "detailed": 1,
     "indignation": 1,
-    "anxious": 1
+    "anxious": 1,
+    "fascinated": 2,
+    "professional": 3,
+    "confident": 1,
+    "mischievous": 1,
+    "carefree": 1,
+    "dutiful": 1,
+    "wistful": 1,
+    "worried": 1,
+    "sincere": 1
   },
   "user_counts": {
-    "greeting": 5,
-    "flirtation": 1,
+    "greeting": 19,
+    "flirtation": 2,
     "sarcasm": 1,
-    "curiosity": 3,
+    "curiosity": 7,
     "curious": 2,
-    "question": 2,
-    "compliment": 1,
-    "request": 4,
+    "question": 7,
+    "compliment": 2,
+    "request": 9,
     "agreement": 1,
     "statement": 2,
     "jovial": 1,
     "informative": 1,
     "story": 1,
-    "concern": 2,
+    "concern": 3,
     "self-awareness": 1,
     "complaint": 1,
     "sarcastic": 1,
     "instructive": 1,
     "observation": 1,
     "obscene": 1,
-    "command": 1
+    "command": 1,
+    "inquiry": 4,
+    "assertion": 1,
+    "innuendo": 1,
+    "intimate": 1,
+    "wishing": 1,
+    "abuse": 1,
+    "clarification": 1
   },
   "llm_by_frequency": [
     {
       "descriptor": "helpful",
-      "count": 6
+      "count": 15
     },
     {
       "descriptor": "curious",
-      "count": 6
+      "count": 14
     },
     {
       "descriptor": "friendly",
-      "count": 3
+      "count": 9
     },
     {
       "descriptor": "thoughtful",
-      "count": 2
+      "count": 3
     },
     {
       "descriptor": "grateful",
-      "count": 2
+      "count": 3
+    },
+    {
+      "descriptor": "neutral",
+      "count": 3
     },
     {
       "descriptor": "concerned",
+      "count": 3
+    },
+    {
+      "descriptor": "professional",
+      "count": 3
+    },
+    {
+      "descriptor": "enthusiastic",
+      "count": 2
+    },
+    {
+      "descriptor": "fascinated",
       "count": 2
     },
     {
@@ -126,14 +174,6 @@
     },
     {
       "descriptor": "assistive",
-      "count": 1
-    },
-    {
-      "descriptor": "neutral",
-      "count": 1
-    },
-    {
-      "descriptor": "enthusiastic",
       "count": 1
     },
     {
@@ -163,27 +203,71 @@
     {
       "descriptor": "anxious",
       "count": 1
+    },
+    {
+      "descriptor": "confident",
+      "count": 1
+    },
+    {
+      "descriptor": "mischievous",
+      "count": 1
+    },
+    {
+      "descriptor": "carefree",
+      "count": 1
+    },
+    {
+      "descriptor": "dutiful",
+      "count": 1
+    },
+    {
+      "descriptor": "wistful",
+      "count": 1
+    },
+    {
+      "descriptor": "worried",
+      "count": 1
+    },
+    {
+      "descriptor": "sincere",
+      "count": 1
     }
   ],
   "user_by_frequency": [
     {
       "descriptor": "greeting",
-      "count": 5
+      "count": 19
     },
     {
       "descriptor": "request",
-      "count": 4
+      "count": 9
     },
     {
       "descriptor": "curiosity",
+      "count": 7
+    },
+    {
+      "descriptor": "question",
+      "count": 7
+    },
+    {
+      "descriptor": "inquiry",
+      "count": 4
+    },
+    {
+      "descriptor": "concern",
       "count": 3
+    },
+    {
+      "descriptor": "flirtation",
+      "count": 2
     },
     {
       "descriptor": "curious",
       "count": 2
     },
     {
-      "descriptor": "question",
+      "descriptor": "compliment",
       "count": 2
     },
     {
@@ -191,19 +275,7 @@
       "count": 2
     },
     {
-      "descriptor": "concern",
-      "count": 2
-    },
-    {
-      "descriptor": "flirtation",
-      "count": 1
-    },
-    {
       "descriptor": "sarcasm",
-      "count": 1
-    },
-    {
-      "descriptor": "compliment",
       "count": 1
     },
     {
@@ -249,8 +321,32 @@
     {
       "descriptor": "command",
       "count": 1
+    },
+    {
+      "descriptor": "assertion",
+      "count": 1
+    },
+    {
+      "descriptor": "innuendo",
+      "count": 1
+    },
+    {
+      "descriptor": "intimate",
+      "count": 1
+    },
+    {
+      "descriptor": "wishing",
+      "count": 1
+    },
+    {
+      "descriptor": "abuse",
+      "count": 1
+    },
+    {
+      "descriptor": "clarification",
+      "count": 1
     }
   ],
-  "total_llm_uses": 34,
-  "total_user_uses": 34
+  "total_llm_uses": 75,
+  "total_user_uses": 75
 }

@@ -1,56 +1,78 @@
 """
 Lexi System - Handles all Lexi UI, state management, and animations
 Separated from main game logic for better organization
+Refactored to use centralized state management and animation loading
 """
 import pygame
 import os
-import glob
+import sys
 import json
-from typing import Dict, Optional, List
-from lexi_chat import LexiChat
-from animation import Animation
-import constants
+from typing import Dict, Optional, List, Tuple
+
+# Add parent directory to path so we can import from modules
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from modules.lexi_chat import LexiChat
+from modules.animation import Animation
+from modules.vi_text_editor import ViTextEditor
+from core import constants
+from systems.lexi_state_manager import LexiStateManager
+from systems.lexi_animation_loader import LexiAnimationLoader
 
 
 class LexiSystem:
     """Manages all Lexi-related functionality: UI, animations, and state"""
     
-    def __init__(self, screen: pygame.Surface, lexi_chat: LexiChat, show_debug_viewport_only: bool = False):
+    def __init__(self, screen: pygame.Surface, lexi_chat: LexiChat, 
+                 state_manager: LexiStateManager, animation_loader: LexiAnimationLoader,
+                 show_debug_viewport_only: bool = False):
         self.screen = screen
         self.lexi_chat = lexi_chat
+        self.state_manager = state_manager
+        self.animation_loader = animation_loader
         self.show_debug_viewport_only = show_debug_viewport_only
         
         # UI state
         self.input_active = False
         self.chat_font = pygame.font.Font(None, 18)
-        self.input_font = pygame.font.Font(None, 20)
+        self.input_font = pygame.font.Font(None, 14)  # Smaller font size
         self.cursor_timer = 0
         self.cursor_visible = True
+        
+        # Vi-like text editor
+        self.vi_editor: Optional[ViTextEditor] = None
         self.chat_scroll_offset = 0
         self.scrollbar_dragging = False
         self.user_has_scrolled = False
         self.last_message_count = 0
         
         # Animation system
-        self.animation_configs = {}
-        self.animations_by_name = {}
         self.animation_position = (1046, 22)
-        self.animations = []
-        self.current_animation_index = 0
-        self.animation_loops = 0
-        self.animation_loops_per_animation = 5
+        self.animations_by_name = {}
         self.sticky_frame = None
         
-        # State system
-        self.current_state = "neutral"
-        self.state_timer = 0.0
+        # State system (for UI rendering)
         self.state_animation = None
         self.state_animation_name = None
-        self.state_timeout = 120.0  # 2 minutes
-        self.last_descriptor = None
+        self.animation_configs = {}
         
-        # Load animations
-        self.animations = self._load_all_animations()
+        # Subscribe to state changes
+        self.state_manager.subscribe_state_change(self._on_state_change)
+        
+        # Load animations for right panel
+        self.animations_by_name = self.animation_loader.load_animations_for_location("right_panel")
+        
+        # Start with neutral animation
+        neutral_anim = self.animations_by_name.get("lexi_neutral")
+        if neutral_anim:
+            neutral_anim.loop = True
+            neutral_anim.play()
+            print(f"✓ Lexi right panel initialized with {len(self.animations_by_name)} animations")
+        else:
+            print("Warning: No neutral animation found for right panel")
+        
+        # Monitor chat for emotion updates
+        self.last_emotion_index = -1
         
         # Check Ollama connection
         if not self.lexi_chat.client.check_connection():
@@ -59,178 +81,30 @@ class LexiSystem:
         else:
             print("✓ Lexi chat system initialized")
     
-    def _load_animation_config(self, animation_path: str) -> Dict:
-        """Load animation config from JSON file, return defaults if not found"""
-        config_file = os.path.join(animation_path, "animation_config.json")
-        default_config = {
-            "start_frame": 0,
-            "end_frame": None,
-            "fps": 10,
-            "loop": True,
-            "skip_first_frame": False,
-            "sticky_frame": None
-        }
+    def _on_state_change(self, emotion: str, pose: str):
+        """React to state changes from central manager"""
+        # Update animation based on emotion
+        animation = self.animation_loader.get_animation("right_panel", emotion, pose)
         
-        if os.path.exists(config_file):
-            try:
-                with open(config_file, 'r', encoding='utf-8') as f:
-                    config = json.load(f)
-                    return {**default_config, **config}
-            except Exception as e:
-                print(f"Warning: Could not load config from {config_file}: {e}")
-                return default_config
-        
-        return default_config
+        if animation and animation.name != self.state_animation_name:
+            # Stop current state animation
+            if self.state_animation:
+                self.state_animation.stop()
+            
+            # Start new animation
+            animation.loop = False
+            animation.play()
+            self.state_animation = animation
+            self.state_animation_name = animation.name
+            
+            # Load config for sticky frame if available
+            animation_path = f"animations/right/{animation.name}"
+            self.animation_configs[animation.name] = self.animation_loader._load_animation_config(
+                os.path.join(animation_path, "animation_config.json")
+            )
+            
+            print(f"LexiSystem: Animation changed to {animation.name} (emotion: {emotion})")
     
-    def _match_descriptor_to_animation(self, descriptor: str) -> Optional[str]:
-        """Match a descriptor to an animation name with fuzzy matching"""
-        if not descriptor:
-            return None
-        
-        descriptor_lower = descriptor.lower().strip()
-        
-        # Direct match first
-        animation_name = f"lexi_{descriptor_lower}"
-        if animation_name in self.animations_by_name:
-            return animation_name
-        
-        # Common variations and synonyms
-        variations = {
-            "happy": ["friendly", "sweet", "helpful"],
-            "sad": ["detached", "ambivalent"],
-            "excited": ["friendly", "helpful"],
-            "calm": ["neutral", "professional", "diplomatic"],
-            "playful": ["witty", "sarcastic", "flirtatious"],
-            "serious": ["professional", "diplomatic", "neutral"],
-            "surprised": ["shocked"],
-            "thinking": ["thoughtful"],
-            "curious": ["thoughtful", "helpful"],
-            "worried": ["ambivalent", "detached"],
-            "confused": ["ambivalent", "thoughtful"],
-            "amused": ["witty", "sarcastic"],
-            "flirty": ["flirtatious"],
-            "sarcastic": ["sarcastic"],
-            "witty": ["witty"],
-            "helpful": ["helpful"],
-            "friendly": ["friendly"],
-            "professional": ["professional"],
-            "diplomatic": ["diplomatic"],
-            "sweet": ["sweet"],
-            "shocked": ["shocked"],
-            "thoughtful": ["thoughtful"],
-            "ambivalent": ["ambivalent"],
-            "detached": ["detached"],
-            "neutral": ["neutral"]
-        }
-        
-        # Check variations
-        for key, anim_list in variations.items():
-            if key in descriptor_lower or descriptor_lower in key:
-                for anim_variant in anim_list:
-                    animation_name = f"lexi_{anim_variant}"
-                    if animation_name in self.animations_by_name:
-                        return animation_name
-        
-        # Partial match
-        for anim_name in self.animations_by_name.keys():
-            anim_base = anim_name.replace("lexi_", "")
-            if anim_base in descriptor_lower or descriptor_lower in anim_base:
-                return anim_name
-        
-        return None
-    
-    def _load_all_animations(self) -> List[Animation]:
-        """Load all Lexi animations from animations/right folders"""
-        animations = []
-        base_path = "animations/right"
-        
-        try:
-            if not os.path.exists(base_path):
-                print(f"Warning: Animation directory {base_path} not found")
-                return []
-            
-            animation_folders = [d for d in os.listdir(base_path) 
-                                if os.path.isdir(os.path.join(base_path, d)) and d.startswith("lexi_")]
-            animation_folders.sort()
-            
-            if not animation_folders:
-                print(f"Warning: No animation folders found in {base_path}")
-                return []
-            
-            for folder_name in animation_folders:
-                animation_path = os.path.join(base_path, folder_name)
-                config = self._load_animation_config(animation_path)
-                self.animation_configs[folder_name] = config
-                
-                frame_files = sorted(glob.glob(os.path.join(animation_path, "frame_*.png")))
-                if not frame_files:
-                    print(f"Warning: No frames found in {animation_path}")
-                    continue
-                
-                start_idx = config.get("start_frame", 0)
-                if config.get("skip_first_frame", False):
-                    start_idx = max(1, start_idx)
-                
-                end_idx = config.get("end_frame")
-                if end_idx is None:
-                    end_idx = len(frame_files)
-                else:
-                    end_idx = min(end_idx + 1, len(frame_files))
-                
-                if start_idx >= len(frame_files) or start_idx >= end_idx:
-                    print(f"Warning: Invalid frame range for {folder_name}")
-                    continue
-                
-                frames = []
-                for frame_file in frame_files[start_idx:end_idx]:
-                    try:
-                        frame = pygame.image.load(frame_file).convert_alpha()
-                        frames.append(frame)
-                    except Exception as e:
-                        print(f"Error loading frame {frame_file}: {e}")
-                        continue
-                
-                sticky_frame_idx = config.get("sticky_frame")
-                sticky_frame_surface = None
-                if sticky_frame_idx is not None:
-                    if 0 <= sticky_frame_idx < len(frame_files):
-                        try:
-                            sticky_frame_surface = pygame.image.load(frame_files[sticky_frame_idx]).convert_alpha()
-                            config['sticky_frame_surface'] = sticky_frame_surface
-                            print(f"  Sticky frame loaded: {sticky_frame_idx}")
-                        except Exception as e:
-                            print(f"Warning: Could not load sticky frame {sticky_frame_idx} for {folder_name}: {e}")
-                
-                if frames:
-                    fps = config.get("fps", 10)
-                    loop = config.get("loop", True)
-                    animation = Animation(folder_name, frames, fps=fps, loop=loop)
-                    animations.append(animation)
-                    self.animations_by_name[folder_name] = animation
-                    print(f"Loaded {folder_name}: {len(frames)} frames (from {start_idx} to {end_idx-1}), fps={fps}, loop={loop}")
-            
-            # Start with neutral animation
-            if animations:
-                neutral_anim = self.animations_by_name.get("lexi_neutral")
-                if neutral_anim:
-                    neutral_anim.loop = True
-                    neutral_anim.play()
-                    self.current_animation_index = animations.index(neutral_anim)
-                    self.current_state = "neutral"
-                    self.sticky_frame = None
-                    print(f"✓ Loaded {len(animations)} Lexi animations, starting with neutral")
-                    print(f"  Neutral animation: {neutral_anim.name}, frames: {len(neutral_anim.frames)}, playing: {neutral_anim.playing}, loop: {neutral_anim.loop}")
-                    print(f"  Animation index: {self.current_animation_index}, position: {self.animation_position}")
-                else:
-                    animations[0].loop = True
-                    animations[0].play()
-                    print(f"✓ Loaded {len(animations)} Lexi animations, starting with {animations[0].name}")
-            
-            return animations
-            
-        except Exception as e:
-            print(f"Error loading Lexi animations: {e}")
-            return []
     
     def handle_event(self, event) -> bool:
         """
@@ -243,23 +117,41 @@ class LexiSystem:
         if event.type == pygame.KEYDOWN:
             # Handle Lexi chat input - takes priority
             if self.input_active:
-                if event.key == pygame.K_RETURN:
-                    if self.lexi_chat.input_text.strip():
+                # Initialize vi editor if needed
+                if self.vi_editor is None:
+                    self.vi_editor = ViTextEditor(
+                        self.input_font,
+                        LexiChat.INPUT_BOX_WIDTH,
+                        LexiChat.INPUT_BOX_HEIGHT,
+                        padding=5
+                    )
+                    self.vi_editor.set_text(self.lexi_chat.input_text)
+                    # Set command callback for :send and :help
+                    self.vi_editor.set_command_callback(self._handle_vi_command)
+                
+                # Handle Ctrl+Enter to send message
+                mods = pygame.key.get_mods()
+                if event.key == pygame.K_RETURN and (mods & pygame.KMOD_CTRL):
+                    # Ctrl+Enter sends message regardless of mode
+                    text = self.vi_editor.get_text()
+                    if text.strip():
                         self.lexi_chat.send_message(
-                            self.lexi_chat.input_text,
+                            text,
                             on_chunk=lambda text: None
                         )
                         self.lexi_chat.input_text = ""
+                        self.vi_editor.set_text("")
                         self.chat_scroll_offset = 999999
                         self.user_has_scrolled = False
                     return True
-                elif event.key == pygame.K_BACKSPACE:
-                    self.lexi_chat.input_text = self.lexi_chat.input_text[:-1]
-                    return True
-                else:
-                    if event.unicode and event.unicode.isprintable():
-                        self.lexi_chat.input_text += event.unicode
-                    return True
+                
+                # Let vi editor handle the key (including regular Enter for new lines)
+                handled = self.vi_editor.handle_key(event)
+                
+                # Update lexi_chat.input_text to match vi editor
+                self.lexi_chat.input_text = self.vi_editor.get_text()
+                
+                return handled
         
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
@@ -272,6 +164,15 @@ class LexiSystem:
                 )
                 if input_rect.collidepoint(event.pos):
                     self.input_active = True
+                    # Initialize vi editor when clicking input box
+                    if self.vi_editor is None:
+                        self.vi_editor = ViTextEditor(
+                            self.input_font,
+                            LexiChat.INPUT_BOX_WIDTH,
+                            LexiChat.INPUT_BOX_HEIGHT,
+                            padding=5
+                        )
+                        self.vi_editor.set_text(self.lexi_chat.input_text)
                     return True
                 else:
                     self.input_active = False
@@ -292,7 +193,7 @@ class LexiSystem:
                 return True
         
         elif event.type == pygame.MOUSEWHEEL:
-            self.chat_scroll_offset = max(0, self.chat_scroll_offset - event.y * 3)
+            self.chat_scroll_offset = max(0, self.chat_scroll_offset - event.y * 10)
             if event.y != 0:
                 self.user_has_scrolled = True
             return True
@@ -391,28 +292,14 @@ class LexiSystem:
                 self.cursor_timer = 0
                 self.cursor_visible = not self.cursor_visible
         
-        # Update state system - check for new descriptors
+        # Monitor chat for new emotions and update state manager
         if self.lexi_chat.message_emotions:
             latest_emotion_index = max(self.lexi_chat.message_emotions.keys())
-            latest_descriptor = self.lexi_chat.message_emotions.get(latest_emotion_index)
-            
-            if latest_descriptor and latest_descriptor != self.last_descriptor:
-                self.last_descriptor = latest_descriptor
-                matched_animation = self._match_descriptor_to_animation(latest_descriptor)
-                
-                if matched_animation and matched_animation != self.state_animation_name:
-                    state_anim = self.animations_by_name.get(matched_animation)
-                    if state_anim:
-                        if self.state_animation:
-                            self.state_animation.stop()
-                        
-                        state_anim.loop = False
-                        state_anim.play()
-                        self.state_animation = state_anim
-                        self.state_animation_name = matched_animation
-                        self.current_state = matched_animation.replace("lexi_", "")
-                        self.state_timer = 0.0
-                        print(f"Lexi state changed to: {self.current_state} (animation: {matched_animation})")
+            if latest_emotion_index > self.last_emotion_index:
+                latest_emotion = self.lexi_chat.message_emotions.get(latest_emotion_index)
+                if latest_emotion:
+                    self.state_manager.update_emotion(latest_emotion, source="chat")
+                self.last_emotion_index = latest_emotion_index
         
         # Update state animation if playing
         if self.state_animation and self.state_animation.playing:
@@ -420,8 +307,9 @@ class LexiSystem:
             
             if self.state_animation.finished:
                 state_config = self.animation_configs.get(self.state_animation_name, {})
+                current_emotion = self.state_manager.current_emotion
                 
-                if self.current_state == "neutral":
+                if current_emotion == "neutral":
                     self.state_animation = None
                     self.state_animation_name = None
                     self.sticky_frame = None
@@ -429,43 +317,25 @@ class LexiSystem:
                     if neutral_anim:
                         neutral_anim.loop = True
                         neutral_anim.play()
-                        self.current_animation_index = self.animations.index(neutral_anim) if neutral_anim in self.animations else 0
                     print("Returned to neutral, resuming animation cycling")
                 else:
                     if 'sticky_frame_surface' in state_config:
                         self.sticky_frame = state_config['sticky_frame_surface']
                         self.state_animation.stop()
-                        print(f"State animation finished, showing sticky frame for {self.current_state}")
+                        print(f"State animation finished, showing sticky frame for {current_emotion}")
                     else:
                         last_frame = self.state_animation.get_current_frame()
                         if last_frame:
                             self.sticky_frame = last_frame
                             self.state_animation.stop()
-                            print(f"State animation finished, using last frame for {self.current_state}")
+                            print(f"State animation finished, using last frame for {current_emotion}")
         
-        # Update state timer (return to neutral after 2 minutes)
-        if self.current_state != "neutral":
-            self.state_timer += dt
-            if self.state_timer >= self.state_timeout:
-                neutral_anim = self.animations_by_name.get("lexi_neutral")
-                if neutral_anim:
-                    if self.state_animation:
-                        self.state_animation.stop()
-                    
-                    neutral_anim.loop = False
-                    neutral_anim.play()
-                    self.state_animation = neutral_anim
-                    self.state_animation_name = "lexi_neutral"
-                    self.current_state = "neutral"
-                    self.state_timer = 0.0
-                    print("Lexi returning to neutral state (2 minute timeout)")
-        
-        # Update default neutral animation
+        # Update default neutral animation if no state animation
         has_active_state = (self.state_animation is not None and 
                            (self.state_animation.playing or self.sticky_frame is not None))
         
         if not has_active_state:
-            if self.animations and self.current_state == "neutral":
+            if self.state_manager.current_emotion == "neutral":
                 neutral_anim = self.animations_by_name.get("lexi_neutral")
                 if neutral_anim:
                     if not neutral_anim.playing:
@@ -661,8 +531,54 @@ class LexiSystem:
             thumb_rect = pygame.Rect(scrollbar_x, thumb_y, 4, thumb_height)
             pygame.draw.rect(self.screen, (120, 120, 120), thumb_rect)
     
+    def _handle_vi_command(self, command: str, args):
+        """Handle commands from vi editor command mode"""
+        if command == "send":
+            # Send message to Lexi
+            text = args if isinstance(args, str) else self.vi_editor.get_text()
+            if text.strip():
+                self.lexi_chat.send_message(
+                    text,
+                    on_chunk=lambda text: None
+                )
+                self.lexi_chat.input_text = ""
+                self.vi_editor.set_text("")
+                self.chat_scroll_offset = 999999
+                self.user_has_scrolled = False
+        elif command == "help":
+            # Show help message (print to console for now)
+            help_text = """
+Vi Editor Commands:
+  :send          - Send message to Lexi
+  :help          - Show this help message
+  :clear         - Clear input buffer (coming soon)
+  
+Navigation (Normal Mode):
+  h, j, k, l     - Move left, down, up, right
+  Arrow keys     - Move cursor
+  0, $           - Start/end of line
+  
+Insert Mode:
+  i              - Enter insert mode at cursor
+  a              - Append after cursor
+  A              - Append to end of line
+  o, O           - Open new line below/above
+  Esc            - Exit insert mode
+  
+Editing:
+  x              - Delete character under cursor
+  dd             - Delete current line
+  Backspace      - Delete before cursor (insert mode)
+  
+Other:
+  Ctrl+Enter     - Send message to Lexi
+  Esc            - Exit insert/command mode
+  :              - Enter command mode
+            """
+            print(help_text)
+    
     def _draw_input(self):
-        """Draw Lexi input box"""
+        """Draw Lexi input box with vi-like editor"""
         input_box = pygame.Rect(
             LexiChat.INPUT_BOX_X,
             LexiChat.INPUT_BOX_Y,
@@ -670,52 +586,79 @@ class LexiSystem:
             LexiChat.INPUT_BOX_HEIGHT
         )
         
-        input_bg_color = (30, 30, 30) if self.input_active else (20, 20, 20)
+        input_bg_color = constants.BLACK  # Black fill color
         pygame.draw.rect(self.screen, input_bg_color, input_box)
-        pygame.draw.rect(self.screen, (100, 100, 100), input_box, 2)
+        pygame.draw.rect(self.screen, (53, 62, 78), input_box, 2)  # Outline color
         
-        padding = 10
-        text_y = input_box.y + (input_box.height - self.input_font.get_height()) // 2
+        padding = 5
+        text_y = input_box.y + padding
         
-        text = self.lexi_chat.input_text
-        if text:
-            words = text.split(' ')
-            lines = []
-            current_line = ""
+        # Use vi editor if available, otherwise fall back to old system
+        if self.vi_editor is not None:
+            # Draw visible lines from vi editor
+            visible_lines = self.vi_editor.get_visible_lines()
+            line_height = self.input_font.get_height() + 1
             
-            for word in words:
-                test_line = current_line + (" " if current_line else "") + word
-                test_surface = self.input_font.render(test_line, True, constants.WHITE)
-                if test_surface.get_width() <= input_box.width - padding * 2:
-                    current_line = test_line
-                else:
-                    if current_line:
-                        lines.append(current_line)
-                    current_line = word
+            for i, (line_idx, line_text) in enumerate(visible_lines):
+                line_surface = self.input_font.render(line_text, True, constants.WHITE)
+                self.screen.blit(line_surface, (input_box.x + padding, text_y + i * line_height))
             
-            if current_line:
-                lines.append(current_line)
+            # Draw cursor at vi editor position (only in insert/normal mode, not command mode)
+            if self.input_active and self.cursor_visible and self.vi_editor.mode != 'command':
+                cursor_x, cursor_y = self.vi_editor.get_cursor_screen_pos(
+                    input_box.x, input_box.y
+                )
+                cursor_width = 6
+                cursor_height = 12
+                cursor_rect = pygame.Rect(cursor_x, cursor_y, cursor_width, cursor_height)
+                pygame.draw.rect(self.screen, constants.WHITE, cursor_rect)
             
-            for i, line in enumerate(lines[-3:]):  # Show last 3 lines max
-                text_surface = self.input_font.render(line, True, constants.WHITE)
-                self.screen.blit(text_surface, (input_box.x + padding, text_y + i * (self.input_font.get_height() + 2)))
-        
-        # Draw cursor
-        if self.input_active and self.cursor_visible:
-            cursor_x = input_box.x + padding
+            # Draw mode indicator or command prompt
+            if self.vi_editor.mode == 'command':
+                # Draw command prompt at bottom of input box
+                command_text = f":{self.vi_editor.get_command_buffer()}"
+                if self.cursor_visible:  # Blinking cursor in command mode
+                    command_text += "_"
+                command_surface = self.input_font.render(command_text, True, constants.WHITE)
+                cmd_y = input_box.bottom - command_surface.get_height() - padding
+                self.screen.blit(command_surface, (input_box.x + padding, cmd_y))
+            else:
+                # Draw mode indicator (INSERT mode)
+                mode_text = self.vi_editor.get_mode_display()
+                if mode_text:
+                    mode_surface = self.input_font.render(mode_text, True, (100, 100, 100))
+                    mode_x = input_box.right - mode_surface.get_width() - padding
+                    mode_y = input_box.bottom - mode_surface.get_height() - padding
+                    self.screen.blit(mode_surface, (mode_x, mode_y))
+            
+            # Draw command prompt at bottom if in command mode
+            if self.vi_editor.mode == 'command':
+                command_text = f":{self.vi_editor.get_command_buffer()}_"
+                command_surface = self.input_font.render(command_text, True, constants.WHITE)
+                # Draw at bottom of input box
+                cmd_y = input_box.bottom - command_surface.get_height() - padding
+                self.screen.blit(command_surface, (input_box.x + padding, cmd_y))
+        else:
+            # Fallback to old system if vi editor not initialized
+            text = self.lexi_chat.input_text
             if text:
-                last_line = text.split('\n')[-1] if '\n' in text else text
-                words = last_line.split(' ')
-                if words:
-                    last_word = words[-1]
-                    test_surface = self.input_font.render(last_word, True, constants.WHITE)
-                    cursor_x += test_surface.get_width()
-            cursor_rect = pygame.Rect(cursor_x, text_y, 2, self.input_font.get_height())
-            pygame.draw.rect(self.screen, constants.WHITE, cursor_rect)
+                line_surface = self.input_font.render(text, True, constants.WHITE)
+                self.screen.blit(line_surface, (input_box.x + padding, text_y))
+            
+            # Simple cursor
+            if self.input_active and self.cursor_visible:
+                text_width = 0
+                if text:
+                    text_surface = self.input_font.render(text, True, constants.WHITE)
+                    text_width = text_surface.get_width()
+                cursor_x = input_box.x + padding + text_width
+                cursor_y = input_box.y + padding
+                cursor_rect = pygame.Rect(cursor_x, cursor_y, 6, 12)
+                pygame.draw.rect(self.screen, constants.WHITE, cursor_rect)
     
     def _draw_animation(self):
         """Draw current Lexi animation"""
-        if not self.animations:
+        if not self.animations_by_name:
             pygame.draw.rect(self.screen, (255, 0, 0), 
                            (self.animation_position[0], self.animation_position[1], 50, 50))
             return
@@ -733,7 +676,7 @@ class LexiSystem:
             return
         
         # Priority 3: Neutral animation
-        if self.current_state == "neutral":
+        if self.state_manager.current_emotion == "neutral":
             neutral_anim = self.animations_by_name.get("lexi_neutral")
             if neutral_anim:
                 if not neutral_anim.playing:

@@ -11,7 +11,7 @@ import json
 
 # Add parent directory to path to import animation module
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from animation import Animation
+from modules.animation import Animation
 
 # Screen dimensions
 SCREEN_SIZE = 700
